@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="690" height="200">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.data.*;
+			import com.kios.domain.interfaces.IIterator;
+			import com.kios.domain.interfaces.ICollection;
+			import com.kios.domain.events.LoaderEvent;
+			import com.kios.domain.loaders.DBIngredientsTypeLoader;
+			
+			//Para saber que tipo de ingredientes cargar.
+			public var id_type:Number;
+	
+			
+			public function loadIngredients():void {
+				removeAllChildren();
+				//llamamos al servicio DBIngredientsTypeLoader para cargar los ingredientes.
+				var loader:DBIngredientsTypeLoader = new DBIngredientsTypeLoader(id_type);
+				loader.addEventListener(LoaderEvent.ONLOAD, onLoad);
+				loader.load();
+			}
+			
+			private function onLoad(event:LoaderEvent):void {
+				//Cargamos los ingredientes en el contenedor.
+				var ingredients:ICollection = event.collection;
+		    	var i:IIterator = ingredients.iterator();
+		    	while(i.hasNext()) {
+		    		var ing:Ingredient = i.next() as Ingredient;
+		    		//Si participa el ingrediente en creaciones
+		    		if(ing.getSpec(Attributes.INS_CREA) as String == "S") {
+		    			var ingView:IngredientView = new IngredientView();
+		    		    addChild(ingView);
+		    		    ingView.ingredient = ing;
+		    		    ingView.hideRemoveBtn();
+		    		}
+		    	}
+			}
+	
+		]]>
+	</mx:Script>
+	
+	
+</mx:HBox>

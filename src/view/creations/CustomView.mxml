@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" creationComplete="init()">
+
+ <mx:Script>
+ 	<![CDATA[
+ 		import com.kios.domain.collections.DefaultArrayCollection;
+ 		import com.kios.domain.interfaces.*;
+ 		import com.kios.domain.events.*;
+ 		import com.kios.domain.savers.DBCreationSaver;
+ 		import mx.rpc.events.FaultEvent;
+ 		import mx.controls.Alert;
+ 		import com.kios.domain.data.*;
+ 		import mx.events.IndexChangedEvent;
+ 		import mx.rpc.events.ResultEvent;
+ 		import com.kios.domain.utils.RemoteObjectAdapter;
+ 		
+ 		private function init():void {
+ 			addEventListener("onAddIngredient", onAddIng);
+ 			addEventListener("onRemoveIngredient", onRemoveIng);
+ 			var remote:RemoteObjectAdapter = new RemoteObjectAdapter();
+ 			remote.addEventListener(ResultEvent.RESULT, onResult);
+ 			remote.call("getTInsumos");
+ 		}
+ 		//Crea las pestañas en el componente con los ingredientes.
+ 		private function onResult(event:ResultEvent):void {
+ 			var firstTime:Boolean = true;
+ 			var result:Array = event.result as Array;
+ 			for(var i:Number = 0; i < result.length; i++) {
+ 				var record:Object = result[i];
+ 				if(record.TIN_CREAC == "S") {
+ 					var list:IngredientsListView = new IngredientsListView();
+ 					list.label = record.TIN_TIPO;
+ 					//Almacena el id del tipo de ingredientes a cargar.
+ 					list.id_type = record.TIN_CLAVE;
+ 					typeNavigator.addChild(list);
+ 					if(firstTime) {
+ 						//Si es la primera vez, cargamos la primera pestaña de ingredientes.
+ 						firstTime = false;
+ 						list.loadIngredients();
+ 					}
+ 				}
+ 			}
+ 		}
+ 		
+ 	    private function back():void {
+		     dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"Back"}));
+		}
+		//Metodo que se ejecuta cuando se cambian las pestañas de ingredientes.
+		private function onChangeTab(e:IndexChangedEvent):void {
+			var list:IngredientsListView = e.relatedObject as IngredientsListView;
+			list.loadIngredients();
+		}
+		//Metodo que se ejecuta cuando se añade un ingrediente
+		private function onAddIng(event:Event):void {
+			var t:IngredientView = event.target as IngredientView;
+		    if(checkIngredientsNumber(t.ingredient)) {
+			    var ingView:IngredientView = new IngredientView();
+			    creationComp.addChild(ingView);
+			    ingView.ingredient = t.ingredient;	
+			    ingView.hideAddBtn();
+			}
+		}
+		//Metodo que se ejecuta cuando se remueve un ingrediente
+		private function onRemoveIng(event:Event):void {
+			creationComp.removeChild(event.target as IngredientView);
+		}
+		//Checa si ya se pusieron los máximos ingredientes del mismo tipo dentro del componente.
+		private function checkIngredientsNumber(i:Ingredient):Boolean {
+			var matches:Number = 0;
+			var type:String = i.getSpec(Attributes.INS_TYPE) as String;
+		    var max_number:* = i.getSpec(Attributes.INS_MAX);
+		    var lookFor:Specs = new Specs();
+		    lookFor.setValue(Attributes.INS_TYPE, type);
+		    lookFor.setValue(Attributes.INS_MAX, max_number);
+		    var currentIng:Array = creationComp.getChildren();
+		    for(var e:Number = 0; e < currentIng.length; e++) {
+		    	var ing:Ingredient = currentIng[e].ingredient as Ingredient;
+		    	//Si la especificación es igual, lo tomamos como que ya existe.
+		    	if(ing.specEquals(lookFor)) {
+		    		matches++;
+		    	}
+		    }
+		    
+		    if(matches >= max_number) {
+		    	mx.controls.Alert.show("No se pueden agregar mas ingredientes del tipo "+type);
+		    	return false;
+		    }
+		    
+		    return true;
+		}
+		// Salva la creacion
+		private function onSaveCreation():void {
+			var name:String = name_txt.text;
+			var creationName:String = creation_name_txt.text;
+			var currentIng:Array = creationComp.getChildren();
+			if(!currentIng.length) {
+				mx.controls.Alert.show("La creación debe tener ingredientes");
+				return;
+			}
+			var ingredients:ICollection = new DefaultArrayCollection();
+			for(var e:Number = 0; e < currentIng.length; e++) {
+		    	ingredients.addItem(currentIng[e].ingredient);
+		    }
+		    var creationSaver:ISaver = new  DBCreationSaver(name, creationName, ingredients);
+		    creationSaver.addEventListener(SaverEvent.ONSAVE, onSaveCreationSuccess);
+		    creationSaver.addEventListener(SaverErrorEvent.ONSAVERERROR, onSaveCreationFailure);
+		    creationSaver.save();
+		}
+		
+		private function onSaveCreationSuccess(event:SaverEvent):void {
+			name_txt.text = "";
+			creation_name_txt.text = "";
+			creationComp.removeAllChildren();
+			mx.controls.Alert.show("Creacion guardada.");
+		}
+		
+		private function onSaveCreationFailure(event:SaverErrorEvent):void {
+			mx.controls.Alert.show("Hubo un error al guardar la creacion.");
+		}
+ 		
+ 	]]>
+ </mx:Script>
+
+
+	<mx:TabNavigator x="53.5" y="351" width="693" height="200" id="typeNavigator"
+		 change="onChangeTab(event)">
+	</mx:TabNavigator>
+	
+	<mx:Button click="back()" label="&lt;&lt;"  x="20" y="568"/>
+	<mx:HBox x="53.5" y="206" width="693" height="115" backgroundColor="#D5D5D5" id="creationComp">
+	</mx:HBox>
+	<mx:Label x="53" y="180" text="Ingredientes de mi creacion"/>
+	<mx:Button x="616.5" y="568" label="Salvar mi creacion" click="onSaveCreation()"/>
+	<mx:TextInput x="54" y="150" id="creation_name_txt"/>
+	<mx:Label x="54" y="124" text="Nombre de mi creacion:"/>
+	<mx:TextInput x="54" y="94" id="name_txt"/>
+	<mx:Label x="54" y="68" text="Mi nombre:"/>
+	
+</mx:Canvas>

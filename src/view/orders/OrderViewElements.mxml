@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+	
+	<mx:Script>
+		<![CDATA[
+			import view.ChairView;
+			import com.kios.domain.interfaces.IProduct;
+			import com.kios.domain.interfaces.IIterator;
+			import com.kios.domain.data.*;
+			import com.kios.domain.utils.Registry;
+			import mx.rpc.events.ResultEvent;
+			
+			private var registry:Registry = Registry.getInstance();
+			
+			//Obtenemos los productos de la orden actual.
+		    public function refreshProductsOrder():void {
+		    	orderContainer.removeAllChildren();
+		    	//Obtenemos la silla seleccionada del registro para saber que orden es la elegida.
+		    	var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+		    	var order:Order = selectedChair.order;
+		    	var iterator:IIterator = order.productsIterator();
+		    	while(iterator.hasNext()) {
+		    		var product:IProduct = iterator.next() as IProduct;
+		    		var orderItem:OrderItemView = new OrderItemView();
+		    		orderItem.product = product;
+		    		orderContainer.addChild(orderItem);
+		    		//Obtenemos su especificación de 'ordenado', para saber si ya fue ordenado.
+		    		var ordered:Boolean = product.getSpec(Attributes.ORDERED) as Boolean;
+		    		if(ordered) {
+		    			//Si ya fue ordenado ocultamos el botón de eliminar.
+		    			orderItem.hideDelBtn();
+		    			//Cambiamos su color a rojo.
+		    			orderItem.setStyle("backgroundColor", "#FF0000");
+		    		}
+		    	}
+		    }
+		    
+		    public function removeOrderItem(child:DisplayObject):void {
+		    	orderContainer.removeChild(child);
+		    }
+		    
+		    private function back():void {
+		    	dispatchEvent(new Event("backToOrderDetails", true));
+		    }
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="38" y="26" text="Order Details" fontSize="24" id="label1"/>
+	<mx:HBox x="38" y="86" width="730" height="366" backgroundColor="#E5E5E5" id="orderContainer" />
+	<mx:Button x="38" y="523" label="&lt;&lt;" click="back()"/>
+	<mx:Canvas x="483" y="499" width="35" height="23" backgroundColor="#FF0000" />
+	<mx:Canvas x="483" y="535" width="35" height="23" backgroundColor="#5B86DE" />
+	<mx:Label x="526" y="502" text="Producto Ordenado"/>
+	<mx:Label x="526" y="535" text="Producto No Ordenado"/>
+	
+</mx:Canvas>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" creationComplete="init()"
+	xmlns:view="view.*">
+	 
+	<mx:Script>
+	<![CDATA[
+		import com.kios.domain.utils.RemoteObjectAdapter;
+		import mx.collections.ArrayCollection;
+	    import mx.rpc.events.ResultEvent;
+	    import mx.rpc.events.FaultEvent;
+	
+		private function onClickOption(event:MouseEvent):void {
+		   dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:event.currentTarget.label, id:event.currentTarget.buttonId}));
+		}
+		
+		private function init():void {
+			//llamamos la metodo remoto getDeptos para obtener el menu de opciones.
+			var rpc:RemoteObjectAdapter = new RemoteObjectAdapter();
+			rpc.addEventListener(FaultEvent.FAULT, onError);
+			rpc.addEventListener(ResultEvent.RESULT, onResult);
+			rpc.call("getDeptos", 0);
+		}
+		
+		private function onResult(event:ResultEvent):void {
+			var menu:Array = event.result as Array;
+			var y:Number = 100;
+			var x:Number = 341;
+			for(var i:Number = 0; i < menu.length; i++) {
+				var button:MenuButton = new MenuButton();
+				addChild(button);
+				button.addEventListener(MouseEvent.CLICK, onClickOption);
+				//Almacenamos el id del departamento para saber que productos cargar posteriormente.
+				button.buttonId = menu[i].DEP_CLAVE;
+				button.label = menu[i].DEP_NOMBRE;
+				button.y = y;
+				button.x = x;
+				y += 50;
+			}
+		}
+		
+		private function onError(event:FaultEvent):void {
+			
+		}
+		
+	]]>
+</mx:Script>
+
+	<view:MenuButton x="31" y="536" label="Back to TableView" click="onClickOption(event)"/>
+	<view:MenuButton x="225" y="536" label="View My Order" click="onClickOption(event)"/>
+	<view:MenuButton x="589" y="100" label="PAQUETES" click="onClickOption(event)"/>
+</mx:Canvas>

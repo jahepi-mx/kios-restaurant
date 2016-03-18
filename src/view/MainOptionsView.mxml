@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600"
+	 xmlns:view="view.*" xmlns:cView="view.creations.*" xmlns:Oview="view.orders.*" creationComplete="init()">
+
+<mx:Script>
+	<![CDATA[
+		import mx.core.UIComponent;
+		import mx.events.IndexChangedEvent;
+		import com.kios.domain.data.*;
+		import com.kios.domain.loaders.DBProductsLoader;
+		import mx.rpc.events.ResultEvent;
+        
+        //Almacena el nombre del departamento elegido.
+        private var _selectedOptionName:String;
+        //Almacena el id del departamento elegido.
+        private var _selectedOptionId:Number;
+		
+		private function init():void {
+			//Aqui añadimos el listener para estar escuchando por eventos que cambien la vista.
+			addEventListener(ResultEvent.RESULT, onChangeOptionMenu);
+		}
+		
+		private function onChangeOptionMenu(event:ResultEvent):void {
+			//Aqui capturamos algunos eventos para cambiar las vistas del viewstack.
+			switch(event.result.label) {
+				case "BEBIDAS":
+				case "POSTRES": 
+				case "ALIMENTOS": 
+				case "PAQUETES":      _selectedOptionName = event.result.label;
+				                      _selectedOptionId = event.result.id;
+				                      optionsMenu.selectedChild = productsDgView; break;
+				                 
+				case "CREACIONES":    optionsMenu.selectedChild = creationsView; break; 
+				            
+				case "Back to Menu": 
+				case "Back":          optionsMenu.selectedChild = menuView; break;
+				
+				case "View My Order": optionsMenu.selectedChild = orderDetailsView;
+				                      orderDetailsView.currentState = "";
+			}
+		}
+		
+		private function onChangeView(event:IndexChangedEvent):void {
+			var target:UIComponent = event.relatedObject as UIComponent;
+			switch(target.id) {
+				/* Si se cambia la vista al componente productsDgView, llamamos a su metodo
+				   publico para que actualice la lista de productos */
+				case "productsDgView": productsDgView.refresProducts(_selectedOptionName, _selectedOptionId); 
+			}
+		}
+		
+	]]>
+</mx:Script>
+	<mx:ViewStack id="optionsMenu" change="onChangeView(event)" x="0" y="0">
+	    <view:MenuView id="menuView"/>
+		<view:ProductsDgView id="productsDgView"/>
+		<Oview:OrderDetailsView id="orderDetailsView"/>
+		<cView:CreationsView id="creationsView" />
+	</mx:ViewStack>
+	
+</mx:Canvas>

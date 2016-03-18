@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" creationComplete="init()">
+	<mx:Script>
+		<![CDATA[
+			import view.creations.IngredientView;
+			import com.kios.domain.events.LoaderEvent;
+			import com.kios.domain.loaders.DBIngredientsTypeLoader;
+			import com.kios.domain.data.*;
+			import com.kios.domain.interfaces.*;
+			
+			//Referencia al producto
+			public var product:IProduct;
+			//Para saber que ingrediente seleccionaron para sustituir.
+			private var selectedIngredient:OrderIngredientView;
+			
+			//Obtenemos los detalles del producto.
+			public function refreshProductDetails():void {
+				ingredientsContainer.removeAllChildren();
+				ingTContainer.removeAllChildren();
+				typeTxt.text = product.getSpec(Attributes.TYPE) as String;
+				nameTxt.text = product.getSpec(Attributes.NAME) as String;
+				//Obtener iterador de ingredientes.
+				var iterator:IIterator = product.elementsIterator();
+				while(iterator.hasNext()) {
+					var ingredient:Ingredient = iterator.next() as Ingredient;
+					//Generamos nuestras vistas para los ingredientes.
+				    var ingredientView:OrderIngredientView = new OrderIngredientView();
+					ingredientsContainer.addChild(ingredientView);
+					ingredientView.ingredient = ingredient;
+				}
+			}
+			
+			private function back():void {
+				dispatchEvent(new Event("backToOrder", true));
+			}
+			
+			private function init():void {
+				//Evento que llama a onChangeInsumo para cargar los ingredientes 
+				//por los cuales se puede sustituir otro ingrediente 
+				addEventListener("changeInsumo", onChangeInsumo);
+				//Evento que se ejecuta cuando se elige un ingredeinte para sustituirlo
+				addEventListener("onAddIngredient", onSustituir);
+			}
+			
+			private function onChangeInsumo(event:Event):void {
+				var ingredientView:OrderIngredientView = event.target as OrderIngredientView;
+				var ingredient:Ingredient = ingredientView.ingredient;
+				selectedIngredient = ingredientView;
+				var id_type:* = ingredient.getSpec(Attributes.INS_TYPE_CLAVE);
+				//Invocamos al servicio para obtener ingredientes por tipo.
+				var service:DBIngredientsTypeLoader = new DBIngredientsTypeLoader(id_type);
+				service.addEventListener(LoaderEvent.ONLOAD, onLoadTInsumos);
+				service.load();
+			}
+			//Cargamos los tipos de insumos sustituibles.
+			private function onLoadTInsumos(event:LoaderEvent):void {
+				ingTContainer.removeAllChildren();
+				var c:ICollection = event.collection;
+				var i:IIterator= c.iterator();
+		    	while(i.hasNext()) {
+		    		var ing:Ingredient = i.next() as Ingredient;
+		    		var ingView:IngredientView = new IngredientView();
+		    		ingTContainer.addChild(ingView);
+		    		ingView.ingredient = ing;
+		    		ingView.hideRemoveBtn();
+		    	}
+			}
+			
+			private function onSustituir(event:Event):void {
+				event.stopPropagation();
+				var ingredientToChange:Ingredient = event.target.ingredient;
+				var currentIngredient:Ingredient = selectedIngredient.ingredient;
+				
+				/* Invocar este método cuando queramos sustituir un ingrediente por otro
+				   esto no es lo mismo que remover, porque al sustituir debe preservar 
+				   un dato del ingrediente original */
+				
+				currentIngredient.replaceIngredient(ingredientToChange);
+				selectedIngredient.refreshView();
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="22" y="10" text="Detalles del Producto" fontSize="25"/>
+	<mx:Label x="22" y="69" text="Label" fontSize="22" color="#2257C2" id="typeTxt"/>
+	<mx:Label x="22" y="134" text="Label" fontSize="22" color="#FF0000" id="nameTxt"/>
+	<mx:Label x="22" y="174" text="Ingredientes" fontSize="26"/>
+	<mx:Label x="22" y="348" text="Sustituibles" fontSize="26"/>
+	<mx:HBox x="22" y="211" width="749" height="129" backgroundColor="#D6D6D6" id="ingredientsContainer" />
+	<mx:HBox x="25.5" y="383" width="749" height="129" backgroundColor="#D6D6D6" id="ingTContainer" />
+	<mx:Button x="22" y="549" label="&lt;&lt;" click="back()"/>
+</mx:Canvas>

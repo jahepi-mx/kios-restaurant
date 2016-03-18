@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+
+<mx:Script>
+	<![CDATA[
+		import mx.rpc.events.ResultEvent;
+		
+		//Aqui disparamos eventos para capturarlos en otros componentes.
+		
+		private function viewOrderDetails():void {
+			dispatchEvent(new Event("viewOrderDetails", true));
+		}
+		
+		private function sendMyOrder():void {
+			dispatchEvent(new Event("sendOrder", true));
+		}
+		
+		private function back():void {
+		    dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"Back to Menu"}));
+		}
+		
+	]]>
+</mx:Script>
+
+
+	<mx:Button x="318" y="239" label="Ver detalles de mi orden" click="viewOrderDetails()"/>
+	<mx:Button x="312" y="284" label="Mandar mi orden a cocina" click="sendMyOrder()"/>
+	<mx:Button x="38" y="490" label="Back to Menu" click="back()" id="button1"/>
+	
+</mx:Canvas>

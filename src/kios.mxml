@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="init()"
+	xmlns:view="view.*"
+    width="800"
+    height="600">
+    
+<mx:Script>
+	<![CDATA[
+		import com.kios.domain.data.Table;
+		import mx.rpc.events.ResultEvent;
+		
+		private var table:Table = Table.getInstance();
+		
+		private function init():void {
+			/*
+			 * El id de la mesa no sé como se vaya a obtener, si de la base datos
+			 * o de algún archivo externo, por el momento puse un identificador cualquiera
+			 */
+			table.id = 1;
+			table.nClients = 4;
+			addEventListener(ResultEvent.RESULT, onChangeView);
+		}
+		
+		private function onChangeView(event:ResultEvent):void {
+			switch(event.result.label) {
+				case "Back to TableView":
+				case "tableView": viewStack.selectedChild = tableView; break;
+				case "orderView": viewStack.selectedChild = orderView; break;
+			}
+		}
+	]]>
+</mx:Script>
+
+<mx:ViewStack id="viewStack">
+	
+	<view:WelcomeView id="welcomeView" />
+	<view:TableView id="tableView" />
+	<view:MainOptionsView id="orderView" />
+	
+</mx:ViewStack>
+
+</mx:Application>

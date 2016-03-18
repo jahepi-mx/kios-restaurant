@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600"
+	 creationComplete="init()" xmlns:view="view.orders.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.events.*;
+			import com.kios.domain.savers.DBOrderSaver;
+			import mx.controls.Alert;
+			import view.ChairView;
+			import mx.events.IndexChangedEvent;
+			import mx.core.UIComponent;
+			import com.kios.domain.interfaces.*;
+			import com.kios.domain.data.*;
+			import com.kios.domain.utils.Registry;
+			
+			private var registry:Registry = Registry.getInstance();
+			
+			private function init():void {
+				addEventListener("removeOrderItem", onRemoveOrderItem);
+				addEventListener("detailsOrderItem", onDetailsOrderItem);
+				addEventListener("backToOrder", onBackToOrder);
+				addEventListener("backToOrderDetails", onBackToOrderDetails);
+				addEventListener("viewOrderDetails", viewOrderDetails);
+				addEventListener("sendOrder", sendOrder);
+			}
+		    //Para remover un producto de la orden actual.
+		    private function onRemoveOrderItem(event:Event):void {
+		    	var orderItem:OrderItemView = event.target as OrderItemView;
+		    	var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+		    	var order:Order = selectedChair.order;
+		    	if(order.removeProduct(orderItem.product)) {
+		    		orderView.removeOrderItem(orderItem);
+		    	}
+		    }
+		    //Para cambiar la vista del viewstack.
+		    private function onDetailsOrderItem(event:Event):void {
+		    	var orderItem:OrderItemView = event.target as OrderItemView;
+		    	if(orderItem.product is Product) {
+		    		//Si es un producto, cambiamos su vista a productDetailView
+		    		views.selectedChild = productDetailView;
+		    		//Asignamos la referencia del producto que se quieren mostrar los detalles al componente productDetailView
+		    	    productDetailView.product = orderItem.product;
+		    	}
+		    	if(orderItem.product is Package) {
+		    		//Si es un paquete, cambiamos su vista a packageDetailView
+		    		views.selectedChild = packageDetailView;
+		    		//Asignamos la referencia del paquete que se quieren mostrar los detalles al componente packageDetailView
+		    	    packageDetailView.pack = orderItem.product;
+		    	}
+		    }
+		    
+		    private function onBackToOrder(event:Event):void {
+		    	views.selectedChild = orderView;
+		    }
+		    
+		    private function onBackToOrderDetails(event:Event):void {
+		    	views.selectedChild = orderViewOptions;
+		    }
+		    
+		    private function onChangeView(event:IndexChangedEvent):void {
+			    var target:UIComponent = event.relatedObject as UIComponent;
+			    switch(target.id) {
+			    	/* Cuando se cambie la vista llamamos al metodo indicado que se encarga
+			    	   de actualizar la lista de productos */
+			    	case "orderView": orderView.refreshProductsOrder(); break;
+				    case "productDetailView": productDetailView.refreshProductDetails(); break;
+				    case "packageDetailView": packageDetailView.refreshPackProducts();
+			    }
+		    }
+		    
+		    private function viewOrderDetails(e:Event):void {
+		    	views.selectedChild = orderView;
+		    }
+		    //Método que se encarga de guardar una orden.
+		    private function sendOrder(e:Event):void {
+		    	var registry:Registry = Registry.getInstance();
+		    	//Obtenemos del registro la orden seleccionada.
+		    	var order:Order = registry.getValue("selectedChair").order;
+		    	//Guardamos esa orden con nuestro servicio DBOrderSaver
+		    	var orderSaver:ISaver = new DBOrderSaver(order);
+		    	orderSaver.addEventListener(SaverEvent.ONSAVE, onSaveOrder);
+		    	orderSaver.addEventListener(SaverErrorEvent.ONSAVERERROR, onSaveOrderFail);
+		    	orderSaver.save();
+		    }
+            
+            private function onSaveOrder(e:SaverEvent):void {
+                mx.controls.Alert.show("Orden guardada");
+            }
+            
+            private function onSaveOrderFail(e:SaverErrorEvent):void {
+            	mx.controls.Alert.show("Hubo un error al tratar de guardar la orden");
+            }
+			
+		]]>
+	</mx:Script>
+	
+	<mx:ViewStack id="views" change="onChangeView(event)" >
+		
+		<view:OrderViewOptions id="orderViewOptions" />
+		<view:OrderViewElements id="orderView"/>
+		<view:OrderItemDetailView id="productDetailView" />
+		<view:PackageDetailsView id="packageDetailView" />
+		
+	</mx:ViewStack>
+	
+</mx:Canvas>

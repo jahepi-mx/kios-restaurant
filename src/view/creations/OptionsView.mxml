@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+	<mx:Script>
+	<![CDATA[
+		
+		import mx.rpc.events.ResultEvent;
+		
+		//Disparamos algunos eventos para que sean capturados en el componente CreationsView
+		private function back():void {
+		    dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"Back to Menu"}));
+		}
+		
+		private function show():void {
+			dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"showCreations"}));
+		}
+		
+		private function create():void {
+			dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"createProduct"}));
+		}
+		
+	]]>
+</mx:Script>
+
+	<mx:Button x="336.5" y="159" label="VER CREACIONES" click="show()" />
+	<mx:Button x="324.5" y="224" label="CREAR UN PRODUCTO" click="create()" />
+	<mx:Button x="37" y="568" label="&lt;&lt;" click="back()"/>
+</mx:Canvas>

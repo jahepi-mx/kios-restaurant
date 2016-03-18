@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.loaders.*;
+			import com.kios.domain.interfaces.*;
+			import com.kios.domain.collections.DefaultArrayCollection;
+			import com.kios.domain.data.*;
+			import com.kios.domain.events.*;
+			import com.kios.domain.utils.RemoteObjectAdapter;
+	        import mx.rpc.events.ResultEvent;
+	        import mx.rpc.events.FaultEvent;
+			
+		    /*
+		    Este codigo a grandes rasgos consulta las subcategorias de los productos (si lo son), 
+		    y llena el contenedor de productos de acuerdo a la opción elegida.
+		    */
+		    
+		    public function refresProducts(productName:String, menuId:Number = 0):void {
+		    	titleLabel.text = productName;
+		    	submenu.removeAllChildren();
+		    	productsContainer.removeAllChildren();
+		    	if(productName == ProductTypes.PAQUETE) {
+		    		//Como los paquetes no tienen subcategorias, nada mas los cargamos.
+		    		var loader:ILoader = new DBPackagesLoader();
+		    		load(loader);
+		    	} else if(productName == ProductTypes.CREACION) {
+		    		//Como las creaciones no tienen subcategorias, nada mas los cargamos.
+		    	    var loader1:ILoader = new DBCreationsLoader();
+		    		load(loader1);
+		    	}else {
+		    		/* Como no son ni paquetes, ni creaciones, sabemos que son productos
+		    		  y estos si tienen subcategorias. */
+		    		loadSubMenu(menuId);
+		    	}
+		    }
+		    
+		    private function load(loader:ILoader):void {
+		    	productsContainer.removeAllChildren();
+		    	loader.addEventListener(LoaderEvent.ONLOAD, onLoadProducts);
+		    	loader.addEventListener(LoaderErrorEvent.ONLOADERROR, onLoadErrorProducts);
+		    	loader.load();
+		    }
+		    
+		    private function loadSubMenu(menuId:Number):void {
+		       //Obtenemos las subcategorias llamando al metodo remoto getDeptos
+		   	   var rpc:RemoteObjectAdapter = new RemoteObjectAdapter();
+			   rpc.addEventListener(ResultEvent.RESULT, onSubMenu);
+			   rpc.call("getDeptos", menuId);
+		   }
+		   
+		   private function onSubMenu(event:ResultEvent):void {
+		   	   var menu:Array = event.result as Array;
+			   for(var i:Number = 0; i < menu.length; i++) {
+				   var button:MenuButton = new MenuButton();
+				   submenu.addChild(button);
+				   button.addEventListener(MouseEvent.CLICK, onClickSubmenu);
+				   button.buttonId = menu[i].DEP_CLAVE;
+				   button.label = menu[i].DEP_NOMBRE;
+			   }
+		   }
+		   
+		   private function onClickSubmenu(event:MouseEvent):void {
+		   	    var id:Number = event.currentTarget.buttonId;
+		   	    var loader:ILoader = new DBProductsLoader(id);
+		   	    load(loader);
+		   }
+		    
+		    private function onLoadProducts(event:LoaderEvent):void {
+		    	var products:ICollection = event.collection;
+		    	var i:IIterator = products.iterator();
+		    	while(i.hasNext()) {
+		    		var product:IProduct = i.next() as IProduct;
+		    		var productView:ProductView = new ProductView();
+		    		productView.product = product;
+		    		productsContainer.addChild(productView);
+		    	}
+		    }
+		    
+		    private function onLoadErrorProducts(event:LoaderErrorEvent):void {
+		    	trace(event.message);
+		    }
+		    
+		    private function back():void {
+		    	dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"Back"}));
+		    }
+		    
+			
+		]]>
+	</mx:Script>
+	<mx:HBox x="38" y="144" width="720" height="322" backgroundColor="#EAEAEA" id="productsContainer" />
+	<mx:Label x="38" y="22" text="" fontSize="26" id="titleLabel"/>
+	<mx:Button x="38" y="490" label="&lt;&lt;" click="back()"/>
+	<mx:HBox x="38" y="68" width="720" height="68" id="submenu" />
+</mx:Canvas>

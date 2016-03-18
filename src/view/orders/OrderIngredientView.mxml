@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="152" height="94" backgroundColor="#236DF5">
+	
+	<mx:Script>
+		<![CDATA[
+			
+			import com.kios.domain.data.*;
+			
+			private var _ingredient:Ingredient;
+			
+			public function get ingredient():Ingredient {
+				return _ingredient;
+			}
+			
+			public function set ingredient(i:Ingredient):void {
+				_ingredient = i;
+				refreshView();
+			}
+			
+			public function refreshView():void {
+				checkBox.selected = _ingredient.actived;
+				checkBox.enabled = _ingredient.editable;
+				sustituirBtn.enabled = _ingredient.editable;
+                ingName.text = _ingredient.getSpec(Attributes.NAME) as String;
+                ingType.text = _ingredient.getSpec(Attributes.INS_MODEL) as String;
+			}
+			
+			private function onChange(event:Event):void {
+				if(checkBox.selected) {
+					//Activamos el ingrediente
+					_ingredient.active();
+				} else {
+					//Desactivamos el ingrediente
+					_ingredient.deactive();
+				}
+			}
+			
+			private function onChangeInsumo():void {
+				dispatchEvent(new Event("changeInsumo", true));
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:CheckBox x="36" y="46" label="Activado" id="checkBox" change="onChange(event)"/>
+	<mx:Button x="36" y="69" label="Sustituir" click="onChangeInsumo()" id="sustituirBtn" />
+	<mx:Label x="26.5" y="6" text="Ingredient name" id="ingName"/>
+	<mx:Label x="26" y="26" text="Label" width="99.5" id="ingType"/>
+	
+	
+</mx:Canvas>

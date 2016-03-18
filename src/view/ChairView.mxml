@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="86" height="88" cornerRadius="0" 
+	backgroundColor="#BFB1B1" click="onClickChair()">
+	<mx:states>
+		<mx:State name="change">
+			<mx:RemoveChild target="{nameLabel}"/>
+			<mx:AddChild position="lastChild">
+				<mx:TextInput x="10" y="22" width="66" id="nameInput" maxChars="10" click="onTextInputClick(event)"/>
+			</mx:AddChild>
+			<mx:AddChild position="lastChild">
+				<mx:Button x="16" y="52" label="Save" id="saveBtn" click="onClickSaveName(event)"/>
+			</mx:AddChild>
+			<mx:RemoveChild target="{button1}"/>
+		</mx:State>
+	</mx:states>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.utils.Registry;
+			import com.kios.domain.data.*;
+			import mx.controls.Alert;
+			
+			//Este componente debe almacenar la referencia de la orden.
+			public var order:Order;
+		    private var table:Table = Table.getInstance();
+		    private var registry:Registry = Registry.getInstance();
+		    
+		    
+		    private function onClickSetName(event:Event):void {
+		    	event.stopPropagation();
+		    	currentState = "change";
+		    }
+		    
+		    private function onTextInputClick(event:Event):void {
+		    	event.stopPropagation();
+		    }
+		    
+		    private function onClickSaveName(event:Event):void {
+		    	event.stopPropagation();
+		    	if(nameInput.text == "") {
+		    		Alert.show("Debe de asignar un nombre a su lugar.");
+		    		return;
+		    	}
+		    	if(order == null) {
+		    	   /*
+		    	    * Si la orden de esta silla no ha sido definida la creamos y
+		    	    * la añadimos a la mesa.
+		    	    */
+		    	   order = new Order();
+		    	   order.setSpec(Attributes.NAME, nameInput.text);
+		    	   table.addOrder(order);
+		    	} else {
+		    	   order.setSpec(Attributes.NAME, nameInput.text);
+		    	}
+		    	currentState = "";
+		    	nameLabel.text = order.getSpec(Attributes.NAME) as String;
+		    }
+		    
+		    private function onClickChair():void {
+		    	var chair:ChairView = registry.getValue("selectedChair") as ChairView;
+		    	if(chair != null && chair != this) {
+		    		chair.alpha = 1;
+		    	}
+		    	alpha = .5;
+		    	/* Registramos la silla del cliente seleccionada para su posterior referencia, 
+		    	   para saber que orden y alguna que otra cosilla. */
+		    	registry.setValue("selectedChair", this);
+		    }
+		    
+		    public function removeName():void {
+		    	nameLabel.text = "";
+		    }
+		    
+		    public function refreshView():void {
+		    	nameLabel.text = order.getSpec(Attributes.NAME) as String;
+		    }
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Label x="13.75" y="13" width="58.5" textAlign="center" id="nameLabel"/>
+	<mx:Button x="4" y="40" label="SetName" click="onClickSetName(event)" id="button1"/>
+	
+	
+	
+</mx:Canvas>

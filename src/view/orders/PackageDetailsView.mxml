@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+
+<mx:Script>
+	<![CDATA[
+		import com.kios.domain.interfaces.IIterator;
+		import com.kios.domain.interfaces.IProduct;
+		import com.kios.domain.data.*;
+		
+		//Referencia al paquete.
+		public var pack:IProduct;
+		
+		//Obtenemos los productos del paquete.
+		    public function refreshPackProducts():void {
+		    	packContainer.removeAllChildren();
+		    	var iterator:IIterator = pack.elementsIterator();
+		    	while(iterator.hasNext()) {
+		    		var product:IProduct = iterator.next() as IProduct;
+		    		var orderItem:OrderItemView = new OrderItemView();
+		    		orderItem.product = product;
+		    		packContainer.addChild(orderItem);
+		    		orderItem.hideDelBtn();
+		    	}
+		    }
+		    
+		    private function back():void {
+		    	dispatchEvent(new Event("backToOrder", true));
+		    }
+		
+	]]>
+</mx:Script>
+
+
+	<mx:HBox x="31" y="90" width="744" height="441" backgroundColor="#C7C7C7" id="packContainer" />
+	<mx:Label x="44" y="37" text="Detalles del Paquete" fontSize="18"/>
+	<mx:Button x="31" y="557" label="Back To Order Details" click="back()"/>
+	
+</mx:Canvas>

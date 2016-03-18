@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" initialize="init()">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.events.LoaderEvent;
+			import com.kios.domain.interfaces.*;
+			import com.kios.domain.loaders.DBOrdersLoader;
+			import mx.events.ListEvent;
+			import com.kios.domain.utils.RemoteObjectAdapter;
+			import com.kios.domain.events.SaverEvent;
+			import com.kios.domain.data.Order;
+			import com.kios.domain.savers.DBOrderTableChangeSaver;
+			import com.kios.domain.savers.DBOrderSaver;
+			import com.kios.test.Test5;
+			import com.kios.domain.utils.Registry;
+			import com.kios.domain.data.Table;
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			
+			private var table:Table = Table.getInstance();
+			private var registry:Registry = Registry.getInstance();
+			private var selectedOrderStack:Number;
+			private var selectedOrderKey:Number;
+			
+			private function init():void {
+				var x:Number = 200;
+				var y:Number = 80;
+				//Generamos las mesas por el número de clientes que hay.
+				for(var i:Number = 0; i < table.nClients; i++) {
+					var chair:ChairView = new ChairView();
+					chair.x = x;
+					chair.y = y;
+					addChild(chair);
+					x += 100;
+				}
+			}
+			
+			private function onClickOrder():void {
+				//Obtenemos del registro la silla seleccionada
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				if(selectedChair != null) {
+					/*
+					 * Si la orden no está definida, quiere decir que no se le ha puesto un
+					 * nombre a la orden
+					 */
+					if(selectedChair.order != null) {
+						dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"orderView"}));
+					} else {
+						Alert.show("La mesa debe de tener un nombre asignado.");
+					}
+				} else {
+					Alert.show("Debe tener seleccionado un lugar antes de proceeder.");
+				}
+			}
+			
+			private function onDeleteOrder():void {
+				//Obtenemos del registro la silla seleccionada
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				if(selectedChair != null) {
+					/*
+					 * Si la orden no está definida, quiere decir que no se le ha puesto un
+					 * nombre a la orden
+					 */
+					if(selectedChair.order != null) {
+						//Borramos la orden de la mesa.
+						table.removeOrder(selectedChair.order);
+						selectedChair.nameLabel.text = "";
+						selectedChair.order = null;
+					} else {
+						Alert.show("La orden de esta mesa no se ha creado.");
+					}
+				} else {
+					Alert.show("Debe tener seleccionado un lugar antes de proceeder.");
+				}
+			}
+			
+			private function getTableInfo():void {
+				com.kios.test.Test5.getTableInfo();
+			}
+			
+			/*
+			 * AQUI ESTA TODA LA PARTE DE LA COLA Y GENERACIÓN DE ORDENES A PARTIR DE 
+			 * UNA OPCIÓN ESCOGIDA DE LA COLA.
+			 */
+			
+			//SALVAMOS LA ORDEN EN LA COLA CON EL SERVICIO DBORDERTABLECHANGER 
+			private function toStack(event:Event):void {
+				//Obtenemos del registro la silla seleccionada
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				if(selectedChair != null) {
+					if(selectedChair.order != null) {
+						var order:Order = selectedChair.order;
+				        var tableChangeService:DBOrderTableChangeSaver = new DBOrderTableChangeSaver(order);
+				        tableChangeService.addEventListener(SaverEvent.ONSAVE, onSaveTableChange);
+				        tableChangeService.save();
+				        return;
+					}
+				} 
+					Alert.show("Debe tener seleccionado el lugar antes de proceeder.");
+			}
+			//CUANDO SE SALVE EN LA COLA, BORRAMOS LA ORDEN DE LA MEMORIA
+			private function onSaveTableChange(e:SaverEvent):void {
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				selectedChair.order = null;
+				selectedChair.removeName();
+				//Cargamos la lista de ordenes que se encuentran en cola en el datagrid
+				var rpc:RemoteObjectAdapter = new RemoteObjectAdapter();
+				rpc.addEventListener(ResultEvent.RESULT, onStackOrders);
+				rpc.call("getStackOrders");
+			}
+			//CARGAMOS UNA ORDEN CON EL SERVICIO DBORDERSLOADER
+			private function loadStackOrder():void {
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				if(selectedChair != null) {
+					if(selectedOrderStack) {
+						//Removemos de la cola la orden.
+						var rpc:RemoteObjectAdapter = new RemoteObjectAdapter();
+						rpc.addEventListener(ResultEvent.RESULT, onRemoveStackOrder);
+						rpc.call("removeStackOrder", selectedOrderKey);
+						
+					} else {
+						Alert.show("Debe tener seleccionada una orden de la cola");
+					}
+				} else {
+					Alert.show("Debe tener seleccionado el lugar antes de proceeder.");
+				}
+			}
+			//Cuando sea la orden removida de la cola, ahora si la cargamos.
+			private function onRemoveStackOrder(e:ResultEvent):void {
+				colaOrd.dataProvider[colaOrd.selectedIndex] = null;
+				var rpc:DBOrdersLoader = new DBOrdersLoader([selectedOrderStack]);
+			    rpc.addEventListener(LoaderEvent.ONLOAD, onLoadStackOrder);
+			    rpc.load();
+			    
+			    selectedOrderStack = 0;
+				selectedOrderKey = 0;
+			}
+			
+			//CUANDO CARGUÉ LA ORDEN DE LA COLA SATISFACTORIAMENTE
+			private function onLoadStackOrder(e:LoaderEvent):void {
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+			    var c:ICollection = e.collection;
+			    var i:IIterator = c.iterator();
+                selectedChair.order = i.next() as Order;
+                selectedChair.refreshView();
+			}
+			
+			private function onStackOrders(e:ResultEvent):void {
+				colaOrd.dataProvider = e.result;
+			}
+			
+			private function onChangeDG(e:ListEvent):void {
+				selectedOrderStack = e.itemRenderer.data.ORC_CLAVE;
+				selectedOrderKey = e.itemRenderer.data.RCC_CLAVE;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="367.5" y="52" text="Vista Mesa"/>
+	<mx:Button x="291" y="428" label="START ORDERING" fontSize="22" click="onClickOrder()"/>
+	<mx:Button x="334" y="490" label="DELETE AN ORDER" click="onDeleteOrder()"/>
+	<mx:Button x="291" y="537" label="Output Current Table Information" click="getTableInfo()"/>
+	<mx:DataGrid x="157" y="218" width="518" height="99" id="colaOrd" change="onChangeDG(event)">
+		<mx:columns>
+			<mx:DataGridColumn headerText="RCC_CLAVE" dataField="RCC_CLAVE"/>
+			<mx:DataGridColumn headerText="ORC_CLAVE" dataField="ORC_CLAVE"/>
+			<mx:DataGridColumn headerText="RCC_FECHA" dataField="RCC_FECHA"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Label x="157" y="192" text="Cola de Ordenes"/>
+	<mx:Button x="453" y="325" label="A la cola" click="toStack(event)"/>
+	<mx:Button x="535" y="325" label="Cargar Orden de la Cola" click="loadStackOrder()"/>
+	
+	
+</mx:Canvas>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600" xmlns:creations="view.creations.*"
+ creationComplete="init()" xmlns:view="view.*">
+
+<mx:Script>
+	<![CDATA[
+		import mx.core.UIComponent;
+		import mx.events.IndexChangedEvent;
+		import mx.rpc.events.ResultEvent;
+		import com.kios.domain.data.*;
+		
+		private function init():void {
+			//Añadimos el listener para capturar los eventos para cambiar las vistas.
+			addEventListener(ResultEvent.RESULT, changeView);
+		}
+		
+		private function changeView(event:ResultEvent):void {
+			switch(event.result.label) {
+				//Cambiamos las vistas del viewstack
+				case "Back":          event.stopPropagation();
+				                      views.selectedChild = rootCreations; break;
+				case "showCreations": views.selectedChild = creationsListView; break;
+				case "createProduct": views.selectedChild = customView; break;
+			}
+		}
+		
+		private function onChangeView(event:IndexChangedEvent):void {
+			var target:UIComponent = event.relatedObject as UIComponent;
+			switch(target.id) {
+				//Si al cambiar la vista el componente es creationsListView, actualizamos la lista de productos
+				case "creationsListView": creationsListView.refresProducts(ProductTypes.CREACION); break;
+			}
+		}
+		
+	]]>
+</mx:Script>
+
+
+ <mx:ViewStack change="onChangeView(event)" id="views">
+ 	<creations:OptionsView id="rootCreations" />
+ 	<view:ProductsDgView id="creationsListView" />
+ 	<creations:CustomView id="customView" />
+ </mx:ViewStack>
+	
+</mx:Canvas>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="92" height="80" backgroundColor="#8F94B7">
+	
+	<mx:Script>
+		<![CDATA[
+			import com.kios.domain.data.*;
+			
+			//Referencia al ingrediente
+			private var ing:Ingredient;
+			
+			public function set ingredient(i:Ingredient):void {
+				ing = i;
+				iName.text = ing.getSpec(Attributes.NAME) as String;
+				iType.text = ing.getSpec(Attributes.INS_MODEL) as String;
+			}
+			
+			public function get ingredient():Ingredient {
+				return ing.clone();
+			}
+			
+			private function onAdd():void {
+				dispatchEvent(new Event("onAddIngredient", true));
+			}
+			
+			private function onRemove():void {
+				dispatchEvent(new Event("onRemoveIngredient", true));
+			}
+			
+			public function hideAddBtn():void {
+				addBtn.visible = false;
+			} 
+			
+			public function hideRemoveBtn():void {
+				removeBtn.visible = false;
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="10" y="6" text="Ingrediente" id="iName"/>
+	<mx:Button x="50" y="55" label="+" width="36" click="onAdd()" id="addBtn"/>
+	<mx:Button x="10" y="55" label="-" width="32" click="onRemove()" id="removeBtn" />
+	<mx:Label x="10" y="29" text="Label" id="iType" width="72"/>
+	
+</mx:Canvas>

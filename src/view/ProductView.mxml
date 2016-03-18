@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="112" height="112" 
+	backgroundColor="#0B71CF"
+    creationComplete="init()"
+    horizontalScrollPolicy="off"
+    verticalScrollPolicy="off"
+    rollOver="onRollOver()"
+    rollOut="onRollOut()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import com.kios.domain.data.Order;
+			import com.kios.domain.data.Specs;
+			import com.kios.domain.data.Attributes;
+			import com.kios.domain.interfaces.IProduct;
+			import com.kios.domain.utils.Registry;
+			
+			private var registry:Registry = Registry.getInstance();
+			public var product:IProduct;
+			
+			private function init():void {
+				type.text = product.getSpec(Attributes.TYPE) as String;
+				nameTxt.text = product.getSpec(Attributes.NAME) as String;
+			}
+			
+			private function onRollOver():void {
+				alpha = .5;
+			}
+			
+			private function onRollOut():void {
+				alpha = 1;
+			}
+			
+			private function onAddToOrder():void {
+				/*
+				 * Obtenemos la silla seleccionada del registro y le añadimos a la orden
+				 * de esa silla el producto escogido por el cliente
+				 *
+				 */
+				var selectedChair:ChairView = registry.getValue("selectedChair") as ChairView;
+				var order:Order = selectedChair.order;
+				//Agregamos una copia del producto, no queremos la referencia.
+				var productCopy:IProduct = product.clone() as IProduct;
+				//Le añadimos una nueva especificacion al producto para indicar que no ha sido ordenado.
+				productCopy.setSpec(Attributes.ORDERED, false);
+				order.addProduct(productCopy);
+				var name:String = product.getSpec(Attributes.NAME) as String;
+				mx.controls.Alert.show(name+" was added to your order.");
+			}
+			
+		]]>
+	</mx:Script>
+	<mx:Label x="29.5" y="10" text="Label" fontSize="18" color="#FFFFFF" id="type"/>
+	<mx:Text x="10" y="46" id="nameTxt" text="name" width="92" height="51" textAlign="center" color="#C6C6C6"/>
+	<mx:Button x="10" y="80" label="+" width="40" click="onAddToOrder()"/>
+</mx:Canvas>

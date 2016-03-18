@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="800" height="600">
+
+<mx:Script>
+	<![CDATA[
+		import mx.rpc.events.ResultEvent;
+		
+		private function onClickEnter():void {
+			dispatchEvent(new ResultEvent(ResultEvent.RESULT, true, false, {label:"tableView"}));
+		}
+		
+		
+	]]>
+</mx:Script>
+
+	<mx:Label x="305" y="220" text="WELCOME" fontSize="36"/>
+	<mx:Button x="371" y="321" label="Enter" click="onClickEnter()" />
+	
+</mx:Canvas>
